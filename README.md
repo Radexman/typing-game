@@ -20,8 +20,6 @@ The app focuses on delivering a solid MVP demonstrating core gameplay mechanics,
 
 ---
 
----
-
 ## Tech Stack
 
 This project uses the following main technologies and libraries:
@@ -128,3 +126,9 @@ KINDE_POST_LOGIN_REDIRECT_URL=http://localhost:3000/dashboard
 ```bash
 npm run dev
 ```
+
+### Login / Register
+
+You can create an account / login with Google or via email.
+This app is using Kinde for user auth
+https://kinde.com/
