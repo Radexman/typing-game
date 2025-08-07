@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-
+import { SENTENCES } from "@/constants";
 import SentenceDisplay from "../components/SentenceDisplay";
 import TypingInput from "../components/TypingInput";
 import Controls from "../components/Controls";
 import Stats from "../components/Stats";
-import History from "../components/History";
-import { SENTENCES } from "@/constants";
+import HistoryTable from "../components/HistoryTable";
+
+const TOTAL_ROUNDS = 5;
+const ROUND_LENGTH = 30;
 
 export default function TypingGame() {
   const [target, setTarget] = useState("Click Start to begin the round!");
@@ -17,29 +19,48 @@ export default function TypingGame() {
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(1);
   const [history, setHistory] = useState<
-    { wpm: number; accuracy: number; timestamp: number }[]
+    { wpm: number; accuracy: number; timestamp: number; round: number }[]
   >([]);
-
-  const roundLength = 30;
+  const [round, setRound] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  function startRound() {
+  function startRound(roundNumber: number) {
     const sentence = SENTENCES[Math.floor(Math.random() * SENTENCES.length)];
     setTarget(sentence);
     setInput("");
-    setTimeLeft(roundLength);
+    setTimeLeft(ROUND_LENGTH);
     setRunning(true);
     setWpm(0);
     setAccuracy(1);
+    setRound(roundNumber);
   }
 
   function endRound() {
     setRunning(false);
-    setHistory((h) => [...h, { wpm, accuracy, timestamp: Date.now() }]);
+    setHistory((h) => [...h, { wpm, accuracy, timestamp: Date.now(), round }]);
   }
 
+  // Auto focus input when round starts
+  useEffect(() => {
+    if (running && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [running]);
+
+  // Update WPM and accuracy
   useEffect(() => {
     if (!running) return;
+
+    // Auto-stop if user finished typing sentence
+    if (input === target) {
+      clearInterval(intervalRef.current!);
+      endRound();
+      if (round < TOTAL_ROUNDS) {
+        setTimeout(() => startRound(round + 1), 1500);
+      }
+      return;
+    }
 
     const correctChars = input
       .split("")
@@ -47,12 +68,13 @@ export default function TypingGame() {
     const accuracyCalc = input.length > 0 ? correctChars / input.length : 1;
     setAccuracy(accuracyCalc);
 
-    const minutesElapsed = (roundLength - timeLeft) / 60 || 1 / 60;
+    const minutesElapsed = (ROUND_LENGTH - timeLeft) / 60 || 1 / 60;
     const wordsTyped = input.length / 5;
     const wpmCalc = Math.round(wordsTyped / minutesElapsed);
     setWpm(wpmCalc);
   }, [input, timeLeft, target, running]);
 
+  // Timer
   useEffect(() => {
     if (!running) return;
 
@@ -61,6 +83,9 @@ export default function TypingGame() {
         if (time <= 1) {
           clearInterval(intervalRef.current!);
           endRound();
+          if (round < TOTAL_ROUNDS) {
+            setTimeout(() => startRound(round + 1), 1500);
+          }
           return 0;
         }
         return time - 1;
@@ -72,13 +97,28 @@ export default function TypingGame() {
     };
   }, [running]);
 
+  // Start whole game
+  function startGame() {
+    setHistory([]);
+    startRound(1);
+  }
+
   return (
-    <div className="mx-auto max-w-xl p-4">
-      <h1 className="mb-4 text-2xl font-bold">Typing Game (Offline)</h1>
+    <div className="mx-auto max-w-3xl rounded-lg bg-white p-6 shadow-lg">
+      <h1 className="mb-6 text-center text-3xl font-extrabold text-blue-700">
+        Typing Game (Offline)
+      </h1>
+
+      {round > 0 && round <= TOTAL_ROUNDS && (
+        <p className="mb-4 text-center font-semibold text-gray-600">
+          Round {round} / {TOTAL_ROUNDS}
+        </p>
+      )}
 
       <SentenceDisplay text={target} timeLeft={timeLeft} />
 
       <TypingInput
+        ref={inputRef}
         value={input}
         onChange={setInput}
         disabled={!running}
@@ -88,16 +128,18 @@ export default function TypingGame() {
 
       <Controls
         running={running}
-        onStart={startRound}
+        onStart={startGame}
         onStop={() => {
           if (intervalRef.current) clearInterval(intervalRef.current);
           endRound();
         }}
       />
 
-      <Stats wpm={wpm} accuracy={accuracy} />
+      {(running || round > 0) && <Stats wpm={wpm} accuracy={accuracy} />}
 
-      <History history={history} />
+      {!running && history.length === TOTAL_ROUNDS && (
+        <HistoryTable history={history} />
+      )}
     </div>
   );
 }
