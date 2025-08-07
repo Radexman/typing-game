@@ -23,7 +23,6 @@ export default function TypingGame() {
   >([]);
   const [round, setRound] = useState(0);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [playerName] = useState("You");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -58,11 +57,6 @@ export default function TypingGame() {
     const correctChars = input
       .split("")
       .filter((char, i) => char === target[i]).length;
-
-    const extraMistakes = input.split("").reduce((acc, char, i) => {
-      if (char !== target[i]) acc++;
-      return acc;
-    }, 0);
 
     const totalTyped = input.length;
     const accuracyCalc = totalTyped > 0 ? correctChars / totalTyped : 1;
@@ -114,12 +108,6 @@ export default function TypingGame() {
 
     const interval = setInterval(() => {
       setPlayers([
-        // {
-        //   name: playerName,
-        //   progress: input,
-        //   wpm,
-        //   accuracy,
-        // },
         {
           name: "TyperX",
           progress: target.slice(0, Math.floor(Math.random() * input.length)),
@@ -156,12 +144,11 @@ export default function TypingGame() {
       <SentenceDisplay text={target} timeLeft={timeLeft} />
 
       <TypingInput
-        ref={inputRef}
         value={input}
         onChange={setInput}
         disabled={!running}
         placeholder={running ? "Start typing..." : "Press Start"}
-        autoFocus={running}
+        target={target}
       />
 
       <Controls
