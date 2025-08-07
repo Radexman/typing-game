@@ -18,7 +18,7 @@ const TypingInput = React.forwardRef<
       value={props.value}
       onChange={(e) => props.onChange(e.target.value)}
       placeholder={props.placeholder}
-      className="mb-6 w-full rounded-md border border-gray-300 p-3 text-lg focus:ring-2 focus:ring-blue-600 focus:outline-none"
+      className="mb-6 w-full rounded-md border border-gray-300 p-3 text-lg text-gray-900 focus:ring-2 focus:ring-blue-600 focus:outline-none"
       autoFocus={props.autoFocus}
     />
   );
